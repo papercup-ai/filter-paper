@@ -140,7 +140,7 @@ func (c *Config) RunServer() (chan error, net.Listener) {
 			},
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders: []string{
-				"Content-Type, Content-Length, Accept-Encoding, Authorization, accept, origin",
+				"Content-Type", "Content-Length", "Accept-Encoding", "Authorization", "accept", "origin", "uppy-auth-token",
 			},
 			OptionsPassthrough:   true,
 			OptionsSuccessStatus: http.StatusNoContent,
