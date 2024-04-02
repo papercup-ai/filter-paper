@@ -22,11 +22,13 @@ jobs:
       values-to-override:
         type: string
         default: ""
+      cluster-name:
+        type: string
     steps:
       - checkout
       - run:
           name: Set ~/.kube/config so `kubectl` commands will run
-          command: aws eks update-kubeconfig --region ${AWS_DEFAULT_REGION} --name ${EKS_CLUSTER_NAME}
+          command: aws eks update-kubeconfig --region ${AWS_DEFAULT_REGION} --name << parameters.cluster-name >>
       - kubernetes/install-kubectl
       - run: git clone git@github.com:papercup-ai/charts.git
       - helm/upgrade-helm-chart:
@@ -58,6 +60,7 @@ workflows:
           name: deploy-dev
           context: AWS
           stage: dev
+          cluster-name: ${EKS_CLUSTER_NAME}
           requires:
             - aws-ecr/build-and-push-image-dev
       
@@ -81,5 +84,6 @@ workflows:
           name: deploy-prod
           context: AWS
           stage: prod
+          cluster-name: ${EKS_CLUSTER_NAME}
           requires:
             - aws-ecr/build-and-push-image-prod
