@@ -60,7 +60,7 @@ workflows:
           name: deploy-dev
           context: AWS
           stage: dev
-          cluster-name: ${EKS_CLUSTER_NAME}
+          cluster-name: ${EKS_CLUSTER_NAME_DEV}
           requires:
             - aws-ecr/build-and-push-image-dev
       
