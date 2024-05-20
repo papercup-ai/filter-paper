@@ -111,3 +111,23 @@ the above corresponds to the json
   "claim2": "header2"
 }
 ```
+
+## Papercup setup
+
+### So how is this used as an auth service?
+
+At present, we have two instances of filter-paper: `filter-paper-prod` and `filter-paper-dev`.  
+`filter-paper-prod` is responsible for authentication using the `papercup` auth0 [tenant](https://auth0.com/docs/glossary#T), while `filter-paper-dev` is responsible for authentication using the `papercup-dev` auth0 tenant.  
+This would mean that if a frontend service required an authenticated request to a backend service behind `filter-paper` authentication, we would need to ensure that filter-paper's `env.JWKS_URL` corresponds to the correct tenant against which the user received a signed jwt.  
+
+
+### How to set this up?
+We actually require two pieces of infra to be setup to enable filter paper:
+
+Firstly we need to set up traefik to use this as a [ForwardAuth middleware](https://doc.traefik.io/traefik/middlewares/overview/#configuration-example).
+When doing this, we want to set up the `spec.forwardAuth.address` to be the same `host` in filter-paper's k8s `{stage}.yaml` file.  
+Another thing to mention here, is that the downstream services may not only require filter-paper to forward or terminate a request based on a valid jwt, but also could require certain pieces of information from the jwt to be forwarded (for example, the auth0 user id or roles).  
+Information as to how to accomplish this can be found [here](https://doc.traefik.io/traefik/middlewares/http/forwardauth/#authresponseheaders).  
+At the time of writing, we have middlewares setup for this [here](https://github.com/papercup-ai/charts/tree/main/setup/middlewares).
+
+Secondly, we need to actually deploy the `filter-paper` server. At present, CI is set up for both prod and dev instances to deploy to the relevant k8s cluster.
