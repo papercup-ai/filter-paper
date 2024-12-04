@@ -45,39 +45,23 @@ func (s *Server) DecodeToken(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	authHeader := r.Header.Get(s.authHeaderKey)
-	for i, decoder := range s.decoders {
-		t, err := decoder.Decode(ctx, strings.TrimPrefix(authHeader, "Bearer "))
+	var err error
+	var t *Token
+	// we're trying to decode and validate with all decoders. If one fails we try the next
+	// if all fail we return 401
+	for _, decoder := range s.decoders {
+		t, err = decoder.Decode(ctx, strings.TrimPrefix(authHeader, "Bearer "))
 		if err != nil {
-			// if we are not on the last token, and we are unable to decode the token
-			// this is because it is not the right decoder for this environment, so proceed to the next token
-			if i == len(s.decoders)-1 {
-				log.Warn().Err(err).Int(statusKey, http.StatusUnauthorized).Msg("unable to decode token")
-				rw.WriteHeader(http.StatusUnauthorized)
-				return
-			} else {
-				continue
-			}
+			continue
 		}
-
-		err = t.Validate()
-		if err != nil {
-			// if we are not on the last token, and we are unable to validate the token
-			// this is because it is not the right validation for this token, so proceed to the next token
-			if i == len(s.decoders)-1 {
-				log.Warn().Err(err).Int(statusKey, http.StatusUnauthorized).Msg("unable to validate token")
-				rw.WriteHeader(http.StatusUnauthorized)
-				return
-			} else {
-				continue
-			}
+		if err = t.Validate(); err != nil {
+			continue
 		}
-
 		le := log.Debug()
 		for k, v := range t.Claims {
 			rw.Header().Set(k, v)
 			le.Str(k, v)
 		}
-
 		rw.Header().Set(s.tokenValidatedHeaderKey, "true")
 		le.Str(s.tokenValidatedHeaderKey, "true")
 		le.Int(statusKey, http.StatusOK).Msg("ok")
@@ -85,4 +69,6 @@ func (s *Server) DecodeToken(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Warn().Err(err).Int(statusKey, http.StatusUnauthorized).Msg("unable to decode token")
+	rw.WriteHeader(http.StatusUnauthorized)
 }
