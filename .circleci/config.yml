@@ -51,6 +51,9 @@ workflows:
             - prepare
       - aws-ecr/build_and_push_image:
           name: aws-ecr/build-and-push-image-dev
+          auth:
+            - aws-cli/setup:
+                profile: default
           context: AWS
           region: $AWS_DEFAULT_REGION
           registry-id: AWS_ACCOUNT_ID
@@ -75,6 +78,9 @@ workflows:
             - prepare
       - aws-ecr/build_and_push_image:
           name: aws-ecr/build-and-push-image-prod
+          auth:
+            - aws-cli/setup:
+                profile: default
           context: AWS
           region: $AWS_DEFAULT_REGION
           registry-id: AWS_ACCOUNT_ID
