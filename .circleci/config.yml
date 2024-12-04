@@ -28,7 +28,7 @@ workflows:
           name: aws-ecr/build-and-push-image-dev
           auth:
             - aws-cli/setup:
-                role_arn: arn:aws:iam::064824517495:role/circleCi_ecr
+                profile_name: default
           context: AWS
           region: $AWS_DEFAULT_REGION
           repo: filter-paper
@@ -55,7 +55,7 @@ workflows:
           name: aws-ecr/build-and-push-image-prod
           auth:
             - aws-cli/setup:
-                role_arn: arn:aws:iam::064824517495:role/circleCi_ecr
+                profile_name: default
           context: AWS
           region: $AWS_DEFAULT_REGION
           repo: filter-paper
