@@ -49,7 +49,7 @@ workflows:
           type: approval
           requires:
             - prepare
-      - aws-ecr/build-and-push-image:
+      - aws-ecr/build_and_push_image:
           name: aws-ecr/build-and-push-image-dev
           context: AWS
           region: $AWS_DEFAULT_REGION
@@ -73,7 +73,7 @@ workflows:
               only: master
           requires:
             - prepare
-      - aws-ecr/build-and-push-image:
+      - aws-ecr/build_and_push_image:
           name: aws-ecr/build-and-push-image-prod
           context: AWS
           region: $AWS_DEFAULT_REGION
