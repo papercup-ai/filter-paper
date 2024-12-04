@@ -47,8 +47,9 @@ func (s *Server) DecodeToken(rw http.ResponseWriter, r *http.Request) {
 	authHeader := r.Header.Get(s.authHeaderKey)
 	for i, decoder := range s.decoders {
 		t, err := decoder.Decode(ctx, strings.TrimPrefix(authHeader, "Bearer "))
-
 		if err != nil {
+			// if we are not on the last token, and we are unable to decode the token
+			// this is because it is not the right decoder for this environment, so proceed to the next token
 			if i == len(s.decoders)-1 {
 				log.Warn().Err(err).Int(statusKey, http.StatusUnauthorized).Msg("unable to decode token")
 				rw.WriteHeader(http.StatusUnauthorized)
@@ -60,7 +61,8 @@ func (s *Server) DecodeToken(rw http.ResponseWriter, r *http.Request) {
 
 		err = t.Validate()
 		if err != nil {
-
+			// if we are not on the last token, and we are unable to validate the token
+			// this is because it is not the right validation for this token, so proceed to the next token
 			if i == len(s.decoders)-1 {
 				log.Warn().Err(err).Int(statusKey, http.StatusUnauthorized).Msg("unable to validate token")
 				rw.WriteHeader(http.StatusUnauthorized)

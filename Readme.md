@@ -114,6 +114,12 @@ the above corresponds to the json
 
 ## Papercup setup
 
+### More than one JWKS_URL
+Because we're having services running in dev cluster that authenticate via the production Auth0 tenant, in dev setup we're passing JWKS_URL as a list of URLs, and we check against each of them until we get a result or fail.
+This allows us to have prod authorisations pass in dev contexts (ex: Stapler-V2).
+The idea here is to always pass in first the dev tenant then the prod one. 
+Importantly, this should only be done in dev cluster, not in prod!!!
+
 ### So how is this used as an auth service?
 
 At present, we have two instances of filter-paper: `filter-paper-prod` and `filter-paper-dev`.  

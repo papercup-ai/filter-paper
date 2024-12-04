@@ -104,6 +104,7 @@ func (c *Config) RunServer() (chan error, net.Listener) {
 	jwksURL := c.jwksURL.get()
 	jwksURLs := strings.Split(jwksURL, ",")
 
+	// create a registry entry for each URL
 	var registries []*prom.Registry
 	for i := 0; i < len(jwksURLs); i++ {
 		r := prom.NewRegistry()
@@ -169,6 +170,7 @@ func (c *Config) getServer(registries []*prom.Registry) *decoder.Server {
 	jwksURLs := strings.Split(jwksURL, ",")
 	claimMappings := c.getClaimMappings()
 	var decoders []decoder.TokenDecoder
+	// for each URL, create a new decoder instance
 	for i, url := range jwksURLs {
 		jwsDec, err := decoder.NewJwsDecoder(url, claimMappings)
 		if err != nil {
