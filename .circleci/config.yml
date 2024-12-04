@@ -1,7 +1,6 @@
 version: 2.1
 
 orbs:
-  circleci-tailscale: threecomma/circleci-tailscale@2.2.0
   aws-ecr: circleci/aws-ecr@9.0.4
   aws-cli: circleci/aws-cli@4.0
   kubernetes: circleci/kubernetes@1.3
@@ -16,30 +15,6 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-  deploy:
-    executor: aws-ecr/default
-    parameters:
-      stage:
-        type: string
-      values-to-override:
-        type: string
-        default: ""
-      cluster-name:
-        type: string
-    steps:
-      - checkout
-      - run:
-          name: Set ~/.kube/config so `kubectl` commands will run
-          command: aws eks update-kubeconfig --region ${AWS_DEFAULT_REGION} --name << parameters.cluster-name >>
-      - kubernetes/install-kubectl
-      - circleci-tailscale/connect
-      - run: git clone git@github.com:papercup-ai/charts.git
-      - helm/upgrade-helm-chart:
-          chart: ./charts/filter-paper
-          helm-version: v3.4.1
-          release-name: filter-paper-<< parameters.stage >>
-          values: ./k8s/<< parameters.stage >>.yaml
-          values-to-override: image.tag=$CIRCLE_SHA1
 
 workflows:
   version: 2
@@ -61,11 +36,12 @@ workflows:
           tag: $CIRCLE_SHA1
           requires:
             - allow-dev
-      - deploy:
-          name: deploy-dev
+      - argocd/deploy:
+          service: filter-paper
           context: AWS
-          stage: dev
-          cluster-name: ${EKS_CLUSTER_NAME_DEV}
+          argo-token: $ARGOCD__TOKEN
+          cluster: papercup-eks-dev
+          namespace: papercup-dev
           requires:
             - aws-ecr/build-and-push-image-dev
 
@@ -87,10 +63,11 @@ workflows:
           tag: $CIRCLE_SHA1
           requires:
             - allow-prod
-      - deploy:
-          name: deploy-prod
+      - argocd/deploy:
+          service: filter-paper
           context: AWS
-          stage: prod
-          cluster-name: ${EKS_CLUSTER_NAME}
+          argo-token: $ARGOCD__TOKEN
+          cluster: papercup-eks-prod
+          namespace: papercup-prod
           requires:
             - aws-ecr/build-and-push-image-prod
