@@ -57,7 +57,6 @@ workflows:
                 profile_name: default
           context: AWS
           region: $AWS_DEFAULT_REGION
-          registry-id: AWS_ACCOUNT_ID
           repo: filter-paper
           tag: $CIRCLE_SHA1
           requires:
@@ -81,10 +80,9 @@ workflows:
           name: aws-ecr/build-and-push-image-prod
           auth:
             - aws-cli/setup:
-                profile: default
+                profile_name: default
           context: AWS
           region: $AWS_DEFAULT_REGION
-          registry-id: AWS_ACCOUNT_ID
           repo: filter-paper
           tag: $CIRCLE_SHA1
           requires:
