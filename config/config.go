@@ -100,7 +100,18 @@ func (c *Config) RunServer() (chan error, net.Listener) {
 	logger := c.getLogger()
 	log.Logger = logger
 	registry := prom.NewRegistry()
-	server := c.getServer(registry)
+
+	jwksURL := c.jwksURL.get()
+	jwksURLs := strings.Split(jwksURL, ",")
+
+	// create a registry entry for each URL
+	var registries []*prom.Registry
+	for i := 0; i < len(jwksURLs); i++ {
+		r := prom.NewRegistry()
+		registries = append(registries, r)
+	}
+
+	server := c.getServer(registries)
 	var handler http.HandlerFunc = server.DecodeToken
 	var pingHandler http.HandlerFunc = c.PingHandler
 	histogramMw := histogramMiddleware(registry)
@@ -154,29 +165,36 @@ func (c *Config) RunServer() (chan error, net.Listener) {
 	return done, listener
 }
 
-func (c *Config) getServer(r *prom.Registry) *decoder.Server {
+func (c *Config) getServer(registries []*prom.Registry) *decoder.Server {
 	jwksURL := c.jwksURL.get()
+	jwksURLs := strings.Split(jwksURL, ",")
 	claimMappings := c.getClaimMappings()
-	jwsDec, err := decoder.NewJwsDecoder(jwksURL, claimMappings)
-	if err != nil {
-		if c.forceJwksOnStart.getBool() {
-			panic(err)
-		} else {
-			log.Warn().Err(err).Msg("will try again")
+	var decoders []decoder.TokenDecoder
+	// for each URL, create a new decoder instance
+	for i, url := range jwksURLs {
+		jwsDec, err := decoder.NewJwsDecoder(url, claimMappings)
+		if err != nil {
+			if c.forceJwksOnStart.getBool() {
+				panic(err)
+			} else {
+				log.Warn().Err(err).Msg("will try again")
+			}
 		}
+		claimMsg := zerolog.Dict()
+		for k, v := range claimMappings {
+			claimMsg.Str(k, v)
+		}
+		log.Info().Dict("mappings", claimMsg).Msg("mappings from claim keys to header")
+		var dec decoder.TokenDecoder
+		if c.cacheEnabled.getBool() {
+			dec = decoder.NewCachedJwtDecoder(c.getCache(registries[i]), jwsDec)
+		} else {
+			dec = jwsDec
+		}
+		decoders = append(decoders, dec)
 	}
-	claimMsg := zerolog.Dict()
-	for k, v := range claimMappings {
-		claimMsg.Str(k, v)
-	}
-	log.Info().Dict("mappings", claimMsg).Msg("mappings from claim keys to header")
-	var dec decoder.TokenDecoder
-	if c.cacheEnabled.getBool() {
-		dec = decoder.NewCachedJwtDecoder(c.getCache(r), jwsDec)
-	} else {
-		dec = jwsDec
-	}
-	return decoder.NewServer(dec, c.authHeader.get(), c.tokenValidatedHeader.get(), c.authHeaderRequired.getBool())
+
+	return decoder.NewServer(decoders, c.authHeader.get(), c.tokenValidatedHeader.get(), c.authHeaderRequired.getBool())
 }
 
 func (c *Config) getLogger() (logger zerolog.Logger) {

@@ -5,6 +5,7 @@ go 1.22
 toolchain go1.22.0
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/prometheus/client_golang v1.19.1
