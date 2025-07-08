@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: 064824517495.dkr.ecr.eu-west-1.amazonaws.com/filter-paper
+  repository: 791327541772.dkr.ecr.eu-central-1.amazonaws.com/filter-paper
   pullPolicy: IfNotPresent
   tag: latest
 
